@@ -1,0 +1,33 @@
+version: 2
+registries:
+  metadata-registry:
+    type: npm-registry
+    url: http://169.254.169.254/latest/meta-data/
+    token: fake-token
+  metadata-pypi:
+    type: python-index
+    url: http://169.254.169.254/metadata/instance
+    token: fake-token
+  internal-maven:
+    type: maven-repository
+    url: http://169.254.169.254.nip.io/
+    username: test
+    password: test
+  internal-docker:
+    type: docker-registry
+    url: http://2852039166/
+    username: test
+    password: test
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    registries:
+      - metadata-registry
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    registries:
+      - metadata-pypi
